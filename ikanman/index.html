@@ -24,6 +24,7 @@
             <span class="sr-only">Next</span></a>
     </div>
 </template>
+<!-- <script src="//cdn.bootcss.com/json2/20160511/json2.js"></script> -->
 <script src="//cdn.bootcss.com/jquery/1.12.4/jquery.js"></script>
 <script src="//cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.js"></script>
 <script type="text/javascript">
@@ -65,14 +66,15 @@
             var imageContainer = viewer.find(".carousel-inner");
             var pathPrefix = IMAGE_HOST + chapter.path;
             for (var i = 0, len = chapter.files.length; i < len; i++) {
-                var fullPath = pathPrefix + chapter.files[i];
+                var fileName = chapter.files[i]
+                var idx = fileName.lastIndexOf(".webp");
+                if (idx > 0) {
+                    fileName = fileName.substring(0, fileName.lastIndexOf(".webp"));
+                }
+                var fullPath = pathPrefix + fileName;
                 var imageDiv = $('<div class="item' + (i == 0 ? " active" : "") + '"> <img src="' + fullPath + '"></div>');
                 imageContainer.append(imageDiv);
             }
-            viewer.carousel({
-                interval: false
-            });
-            return viewer;
         }
 
         function generateCatalog(chapters) {
