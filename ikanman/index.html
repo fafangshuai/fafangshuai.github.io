@@ -4,6 +4,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title></title>
     <link href="//cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+        .carousel-inner > .item {
+            position: relative;
+            -webkit-transition: 0.2s ease-in-out left;
+            -moz-transition: 0.2s ease-in-out left;
+            -o-transition: 0.2s ease-in-out left;
+            transition: 0.2s ease-in-out left;
+        }
+    </style>
 </head>
 <body>
 <div class="container" id="container">
@@ -67,10 +76,10 @@
             var pathPrefix = IMAGE_HOST + chapter.path;
             for (var i = 0, len = chapter.files.length; i < len; i++) {
                 var fileName = chapter.files[i];
-                var idx = fileName.lastIndexOf(".webp");
-                if (idx > 0) {
-                    fileName = fileName.substring(0, fileName.lastIndexOf(".webp"));
-                }
+                // var idx = fileName.lastIndexOf(".webp");
+                // if (idx > 0) {
+                    // fileName = fileName.substring(0, fileName.lastIndexOf(".webp"));
+                // }
                 var fullPath = pathPrefix + fileName;
                 var imageDiv = $('<div class="item' + (i == 0 ? " active" : "") + '"> <img src="' + fullPath + '"></div>');
                 imageContainer.append(imageDiv);
