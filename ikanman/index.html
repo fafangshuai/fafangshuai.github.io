@@ -91,6 +91,7 @@
             init: function () {
                 loadData();
                 this.initCatalog();
+                this.changeChapter($catalog.find("select").val())
             },
             initCatalog: function () {
                 var $select = generateCatalog(chapters);
