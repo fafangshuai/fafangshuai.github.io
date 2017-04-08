@@ -131,26 +131,26 @@
                 var files = chapterMap[this.chapter]["files"];
                 this.totalPage = files.length;
                 var pageSelect = generatePageSelect(this.totalPage);
-                pageSelect.on("click", function () {
+                pageSelect.on("change", function () {
                     self.gotoPage($(this).val());
                 });
                 $pageSelect.html(pageSelect);
                 this.gotoPage(this.page);
             },
             gotoPage: function (page) {
+                if (page - 1 < 0) {
+                    return false;
+                }
+                if (page + 1 > this.totalPage - 1) {
+                    return false;
+                }
                 var self = this;
                 this.page = page;
                 generateViewer(this.chapter, this.page);
                 $viewer.find(".previous").on("click", function () {
-                    if (self.page - 1 < 0) {
-                        return false;
-                    }
                     self.gotoPage(self.page - 1);
                 });
                 $viewer.find(".next").on("click", function () {
-                    if (self.page + 1 > self.totalPage - 1) {
-                        return false;
-                    }
                     self.gotoPage(self.page + 1);
                 });
                 $pageSelect.val(this.page);
