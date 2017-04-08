@@ -23,7 +23,9 @@
     <div id="catalog">
     </div>
     <div id="viewer">
-        <!-- <div id="pageSelect"></div> -->
+        <div id="pageSelect">
+            <select class="form-control"></select>
+        </div>
         <ul class="pager">
             <li class="previous"><a href="#">上一页</a></li>
             <li class="next"><a href="#">下一页</a></li>
@@ -43,7 +45,7 @@
         var chapterMap = {};
         var $viewer = $("#viewer");
         var $catalog = $("#catalog");
-        // var $pageSelect = $("#pageSelect");
+        var $pageSelect = $("#pageSelect").find("select");
 
         function loadData() {
             $.ajax({
@@ -102,13 +104,12 @@
         }
 
         function generatePageSelect(totalPage) {
-            var select = $('<select class="form-control"></select>');
+            var opts = "";
             for (var i = 0; i < totalPage; i++) {
                 var text = "第" + (i + 1) + "页";
-                var option = $('<option value="' + i + '">' + text + '</option>');
-                $(select).append(option);
+                opts += '<option value="' + i + '">' + text + '</option>';
             }
-            return $(select);
+            return $(opts);
         }
 
         window.IKanman = {
@@ -117,6 +118,7 @@
             totalPage: 0,
             init: function () {
                 loadData();
+                this.bindEvent();
                 this.initCatalog();
                 this.changeChapter($catalog.find("select").val());
             },
@@ -134,30 +136,41 @@
                 this.page = 0;
                 var files = chapterMap[this.chapter]["files"];
                 this.totalPage = files.length;
-                /*var pageSelect = generatePageSelect(this.totalPage);
-                pageSelect.on("change", function () {
-                    self.gotoPage($(this).val());
-                });
-                $pageSelect.html(pageSelect);*/
+                $pageSelect.html(generatePageSelect(this.totalPage));
                 this.gotoPage(this.page);
             },
-            gotoPage: function (page) {
-                if (page < 0) {
-                    return false;
-                }
-                if (page > this.totalPage - 1) {
-                    return false;
-                }
+            bindEvent: function () {
                 var self = this;
-                this.page = page;
-                generateViewer(this.chapter, this.page);
+                $pageSelect.on("change", function() {
+                    self.gotoPage($(this).val());
+                });
                 $viewer.find(".previous").on("click", function () {
-                    self.gotoPage(self.page - 1);
+                    self.pageByBtn(self.page, "prev");
                 });
                 $viewer.find(".next").on("click", function () {
-                    self.gotoPage(self.page + 1);
+                    self.pageByBtn(self.page, "next");
                 });
-                // $pageSelect.find("select").val(this.page);
+            },
+            pageByBtn: function (page, direction) {
+                if (direction == "next") {
+                    if (page > self.totalPage - 1) {
+                        page = self.totalPage - 1;
+                    } else {
+                        page = page + 1;
+                    }
+                } else if (direction == "prev") {
+                    if (page - 1 < 0) {
+                        page = 0;
+                    } else {
+                        page = page - 1;
+                    }
+                }
+                $pageSelect.val(page);
+                this.gotoPage(page);
+            },
+            gotoPage: function (page) {
+                this.page = page * 1;
+                generateViewer(this.chapter, page);
             },
             printCatalog: function () {
                 console.log(chapters);
