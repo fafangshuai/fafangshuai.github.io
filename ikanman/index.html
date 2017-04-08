@@ -78,10 +78,10 @@
             var pathPrefix = IMAGE_HOST + chapter.path;
             for (var i = 0, len = chapter.files.length; i < len; i++) {
                 var fileName = chapter.files[i];
-                // var idx = fileName.lastIndexOf(".webp");
-                // if (idx > 0) {
-                    // fileName = fileName.substring(0, fileName.lastIndexOf(".webp"));
-                // }
+                var idx = fileName.lastIndexOf(".webp");
+                if (idx > 0) {
+                    fileName = fileName.substring(0, fileName.lastIndexOf(".webp"));
+                }
                 var fullPath = pathPrefix + fileName;
                 var imageDiv = $('<div class="item' + (i == 0 ? " active" : "") + '"> <img src="' + fullPath + '"></div>');
                 imageContainer.append(imageDiv);
