@@ -21,16 +21,17 @@
     <div id="viewer">
     </div>
 </div>
-<template id="carousel-control-tpl">
-    <div id="viewer-carousel" class="carousel slide">
-        <div class="carousel-inner">
-        </div>
-        <a class="carousel-control left" href="#viewer-carousel"
-           data-slide="prev"><span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
-            <span class="sr-only">Previous</span></a>
-        <a class="carousel-control right" href="#viewer-carousel"
-           data-slide="next"><span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
-            <span class="sr-only">Next</span></a>
+<template id="viewer-tpl">
+    <div id="view-wrapper">
+        <ul class="pager">
+            <li class="previous"><a href="#">上一页</a></li>
+            <li class="next"><a href="#">下一页</a></li>
+        </ul>
+        <img src="" class="img-responsive center-block"/>
+        <ul class="pager">
+            <li class="previous"><a href="#">上一页</a></li>
+            <li class="next"><a href="#">下一页</a></li>
+        </ul>
     </div>
 </template>
 <!-- <script src="//cdn.bootcss.com/json2/20160511/json2.js"></script> -->
@@ -72,20 +73,23 @@
             return chapters;
         }
 
-        function generateViewer(chapter) {
-            var viewer = $($("#carousel-control-tpl")[0].innerHTML).clone();
-            var imageContainer = viewer.find(".carousel-inner");
+        function generateViewer(cid, page) {
+            var chapter = chapterMap[cid];
             var pathPrefix = IMAGE_HOST + chapter.path;
-            for (var i = 0, len = chapter.files.length; i < len; i++) {
-                var fileName = chapter.files[i];
-                var idx = fileName.lastIndexOf(".webp");
-                if (idx > 0) {
-                    fileName = fileName.substring(0, fileName.lastIndexOf(".webp"));
-                }
-                var fullPath = pathPrefix + fileName;
-                var imageDiv = $('<div class="item' + (i == 0 ? " active" : "") + '"> <img src="' + fullPath + '"></div>');
-                imageContainer.append(imageDiv);
+            var files = chapter["files"];
+            if (page < 0) {
+                page = 0;
+            } else if (page > files.length) {
+                page = files.length
             }
+            var fileName = files[page];
+            var idx = fileName.lastIndexOf(".webp");
+            if (idx > 0) {
+                fileName = fileName.substring(0, fileName.lastIndexOf(".webp"));
+            }
+            var fullPath = pathPrefix + fileName;
+            var viewer = $($("#viewer-tpl").html()).clone();
+            viewer.find("img").attr("src", fullPath);
             return viewer;
         }
 
@@ -102,10 +106,13 @@
         }
 
         window.IKanman = {
+            page: 0,
+            chapter: 0,
+            totalPage: 0,
             init: function () {
                 loadData();
                 this.initCatalog();
-                this.changeChapter($catalog.find("select").val())
+                this.changeChapter($catalog.find("select").val());
             },
             initCatalog: function () {
                 var $select = generateCatalog(chapters);
@@ -116,7 +123,27 @@
                 $catalog.html($select);
             },
             changeChapter: function (cid) {
-                $viewer.html(generateViewer(chapterMap[cid]));
+                this.chapter = cid;
+                this.page = 0;
+                this.totalPage = chapterMap[this.chapter]["files"].length;
+                this.gotoPage(this.page);
+            },
+            gotoPage: function (page) {
+                var self = this;
+                this.page = page;
+                $viewer.html(generateViewer(this.chapter, this.page));
+                $viewer.find(".previous").on("click", function () {
+                    if (self.page - 1 < 0) {
+                        return false;
+                    }
+                    self.gotoPage(self.page - 1);
+                });
+                $viewer.find(".next").on("click", function () {
+                    if (self.page + 1 > self.totalPage - 1) {
+                        return false;
+                    }
+                    self.gotoPage(self.page + 1);
+                });
             },
             printCatalog: function () {
                 console.log(chapters);
