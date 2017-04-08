@@ -23,7 +23,7 @@
     <div id="catalog">
     </div>
     <div id="viewer">
-        <div id="pageSelect"></div>
+        <!-- <div id="pageSelect"></div> -->
         <ul class="pager">
             <li class="previous"><a href="#">上一页</a></li>
             <li class="next"><a href="#">下一页</a></li>
@@ -43,7 +43,7 @@
         var chapterMap = {};
         var $viewer = $("#viewer");
         var $catalog = $("#catalog");
-        var $pageSelect = $("#pageSelect");
+        // var $pageSelect = $("#pageSelect");
 
         function loadData() {
             $.ajax({
@@ -134,11 +134,11 @@
                 this.page = 0;
                 var files = chapterMap[this.chapter]["files"];
                 this.totalPage = files.length;
-                var pageSelect = generatePageSelect(this.totalPage);
+                /*var pageSelect = generatePageSelect(this.totalPage);
                 pageSelect.on("change", function () {
                     self.gotoPage($(this).val());
                 });
-                $pageSelect.html(pageSelect);
+                $pageSelect.html(pageSelect);*/
                 this.gotoPage(this.page);
             },
             gotoPage: function (page) {
@@ -157,7 +157,7 @@
                 $viewer.find(".next").on("click", function () {
                     self.gotoPage(self.page + 1);
                 });
-                $pageSelect.val(this.page);
+                // $pageSelect.find("select").val(this.page);
             },
             printCatalog: function () {
                 console.log(chapters);
