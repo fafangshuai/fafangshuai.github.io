@@ -19,21 +19,14 @@
     <div id="catalog">
     </div>
     <div id="viewer">
-    </div>
-</div>
-<template id="viewer-tpl">
-    <div id="view-wrapper">
+        <div id="pageSelect"></div>
         <ul class="pager">
             <li class="previous"><a href="#">上一页</a></li>
             <li class="next"><a href="#">下一页</a></li>
         </ul>
         <img src="" class="img-responsive center-block"/>
-        <ul class="pager">
-            <li class="previous"><a href="#">上一页</a></li>
-            <li class="next"><a href="#">下一页</a></li>
-        </ul>
     </div>
-</template>
+</div>
 <!-- <script src="//cdn.bootcss.com/json2/20160511/json2.js"></script> -->
 <script src="//cdn.bootcss.com/jquery/1.12.4/jquery.js"></script>
 <script src="//cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.js"></script>
@@ -46,6 +39,7 @@
         var chapterMap = {};
         var $viewer = $("#viewer");
         var $catalog = $("#catalog");
+        var $pageSelect = $("#pageSelect");
 
         function loadData() {
             $.ajax({
@@ -88,9 +82,7 @@
                 fileName = fileName.substring(0, fileName.lastIndexOf(".webp"));
             }
             var fullPath = pathPrefix + fileName;
-            var viewer = $($("#viewer-tpl").html()).clone();
-            viewer.find("img").attr("src", fullPath);
-            return viewer;
+            $viewer.find("img").attr("src", fullPath);
         }
 
         function generateCatalog(chapters) {
@@ -100,6 +92,16 @@
                 var chapterName = chapter.bname + "" + chapter.cname;
                 var selected = i == 0 ? ' selected="selected"' : '';
                 var option = $('<option value="' + chapter.cid + '"' + selected + '>' + chapterName + '</option>')
+                $(select).append(option);
+            }
+            return $(select);
+        }
+
+        function generatePageSelect(totalPage) {
+            var select = $('<select class="form-control"></select>');
+            for (var i = 0; i < totalPage; i++) {
+                var text = "第" + (i + 1) + "页";
+                var option = $('<option value="' + i + '">' + text + '</option>');
                 $(select).append(option);
             }
             return $(select);
@@ -123,15 +125,22 @@
                 $catalog.html($select);
             },
             changeChapter: function (cid) {
+                var self = this;
                 this.chapter = cid;
                 this.page = 0;
-                this.totalPage = chapterMap[this.chapter]["files"].length;
+                var files = chapterMap[this.chapter]["files"];
+                this.totalPage = files.length;
+                var pageSelect = generatePageSelect(this.totalPage);
+                pageSelect.on("click", function () {
+                    self.gotoPage($(this).val());
+                });
+                $pageSelect.html(pageSelect);
                 this.gotoPage(this.page);
             },
             gotoPage: function (page) {
                 var self = this;
                 this.page = page;
-                $viewer.html(generateViewer(this.chapter, this.page));
+                generateViewer(this.chapter, this.page);
                 $viewer.find(".previous").on("click", function () {
                     if (self.page - 1 < 0) {
                         return false;
@@ -144,6 +153,7 @@
                     }
                     self.gotoPage(self.page + 1);
                 });
+                $pageSelect.val(this.page);
             },
             printCatalog: function () {
                 console.log(chapters);
