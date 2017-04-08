@@ -12,6 +12,10 @@
             -o-transition: 0.2s ease-in-out left;
             transition: 0.2s ease-in-out left;
         }
+
+        #catalog, #pageSelect {
+            padding: 5px;
+        }
     </style>
 </head>
 <body>
@@ -138,10 +142,10 @@
                 this.gotoPage(this.page);
             },
             gotoPage: function (page) {
-                if (page - 1 < 0) {
+                if (page < 0) {
                     return false;
                 }
-                if (page + 1 > this.totalPage - 1) {
+                if (page > this.totalPage - 1) {
                     return false;
                 }
                 var self = this;
