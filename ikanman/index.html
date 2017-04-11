@@ -30,7 +30,8 @@
             <li class="previous"><a href="#">上一页</a></li>
             <li class="next"><a href="#">下一页</a></li>
         </ul>
-        <img src="" class="img-responsive center-block"/>
+        <img id="lightImg" src="" class="img-responsive center-block"/>
+        <img id="shadowImg" src="" class="img-responsive center-block hide"/>
         <ul class="pager">
             <li class="previous"><a href="#">上一页</a></li>
             <li class="next"><a href="#">下一页</a></li>
@@ -79,21 +80,36 @@
         }
 
         function generateViewer(cid, page) {
+            var preLoadSrc = $viewer.find("#shadowImg").attr("src");
+            var src = preLoadSrc ? preLoadSrc : getImagePath(cid, page);
+            $viewer.find("#lightImg").attr("src", src);
+            $viewer.find("#shadowImg").attr("src", getImagePath(cid, page + 1));
+        }
+
+        function clearPreLoadSrc() {
+            $viewer.find("#shadowImg").attr("src", "");
+        }
+
+        function getImagePath(cid, page) {
             var chapter = chapterMap[cid];
             var pathPrefix = IMAGE_HOST + chapter.path;
             var files = chapter["files"];
             if (page < 0) {
                 page = 0;
-            } else if (page > files.length) {
-                page = files.length
+            } else if (page > files.length - 1) {
+                page = files.length - 1;
             }
-            var fileName = files[page];
+            var fileName = handleFileName(files[page]);
+            var fullPath = pathPrefix + fileName;
+            return fullPath;
+        }
+
+        function handleFileName(fileName) {
             var idx = fileName.lastIndexOf(".webp");
             if (idx > 0) {
                 fileName = fileName.substring(0, fileName.lastIndexOf(".webp"));
             }
-            var fullPath = pathPrefix + fileName;
-            $viewer.find("img").attr("src", fullPath);
+            return fileName;
         }
 
         function generateCatalog(chapters) {
@@ -144,6 +160,7 @@
                 loadData();
                 this.bindEvent();
                 this.initCatalog();
+                clearPreLoadSrc();
                 var targetCid;
                 if (CookieUtil.getCid()) {
                     targetCid = CookieUtil.getCid();
@@ -152,11 +169,14 @@
                     targetCid = $catalog.find("select").val();
                 }
                 this.changeChapter(targetCid);
-                var lastPage = CookieUtil.getPage();
-                if (lastPage) {
-                    $pageSelect.val(lastPage);
-                    this.gotoPage(lastPage);
+                var lastPage;
+                if (CookieUtil.getPage()) {
+                    lastPage = CookieUtil.getPage();
+                } else {
+                    lastPage = 0;
                 }
+                $pageSelect.val(lastPage);
+                this.gotoPage(lastPage);
             },
             initCatalog: function () {
                 var $select = generateCatalog(chapters);
@@ -177,27 +197,25 @@
             bindEvent: function () {
                 var self = this;
                 $pageSelect.on("change", function() {
+                    clearPreLoadSrc();
                     self.gotoPage($(this).val());
                 });
                 $viewer.find(".previous").on("click", function () {
-                    self.pageByBtn(self.page, "prev");
+                    clearPreLoadSrc();
+                    self.pageByBtn(self.page - 1, "prev");
                 });
                 $viewer.find(".next").on("click", function () {
-                    self.pageByBtn(self.page, "next");
+                    self.pageByBtn(self.page + 1, "next");
                 });
             },
             pageByBtn: function (page, direction) {
                 if (direction == "next") {
-                    if (page > self.totalPage - 1) {
-                        page = self.totalPage - 1;
-                    } else {
-                        page = page + 1;
+                    if (page >= this.totalPage - 1) {
+                        page = this.totalPage - 1;
                     }
                 } else if (direction == "prev") {
                     if (page - 1 < 0) {
                         page = 0;
-                    } else {
-                        page = page - 1;
                     }
                 }
                 $pageSelect.val(page);
@@ -205,7 +223,7 @@
             },
             gotoPage: function (page) {
                 this.page = page * 1;
-                generateViewer(this.chapter, page);
+                generateViewer(this.chapter, this.page);
                 CookieUtil.setPage(this.page);
             },
             printCatalog: function () {
