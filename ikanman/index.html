@@ -30,7 +30,7 @@
             <li class="previous"><a href="#">上一页</a></li>
             <li class="next"><a href="#">下一页</a></li>
         </ul>
-        <img src="" class="img-responsive center-block"/>
+        <img src="" class="img-responsive center-block" style="display: none;"/>
         <ul class="pager">
             <li class="previous"><a href="#">上一页</a></li>
             <li class="next"><a href="#">下一页</a></li>
@@ -40,6 +40,7 @@
 <!-- <script src="//cdn.bootcss.com/json2/20160511/json2.js"></script> -->
 <script src="//cdn.bootcss.com/jquery/1.12.4/jquery.js"></script>
 <script src="//cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.js"></script>
+<script src="//cdn.bootcss.com/js-cookie/2.1.3/js.cookie.js"></script>
 <script src="//cdn.bootcss.com/eruda/1.2.2/eruda.js"></script>
 <script>eruda.init();</script>
 <script type="text/javascript">
@@ -116,6 +117,25 @@
             return $(opts);
         }
 
+        var CookieUtil = {
+            options: {expires: 365, path: "/"},
+            setCid: function (cid) {
+                Cookies.set("cid", cid, this.options);
+            },
+            setPage: function (page) {
+                Cookies.set("page", page, this.options);
+            },
+            getCid: function () {
+                return Cookies.get("cid");
+            },
+            getPage: function () {
+                return Cookies.get("page");
+            },
+            remove: function (key) {
+                Cookies.reomve(key);
+            }
+        };
+
         window.IKanman = {
             page: 0,
             chapter: 0,
@@ -124,24 +144,35 @@
                 loadData();
                 this.bindEvent();
                 this.initCatalog();
-                this.changeChapter($catalog.find("select").val());
+                var targetCid;
+                if (CookieUtil.getCid()) {
+                    targetCid = CookieUtil.getCid();
+                    $catalog.find("select").val(targetCid);
+                } else {
+                    targetCid = $catalog.find("select").val();
+                }
+                this.changeChapter(targetCid);
+                var lastPage = CookieUtil.getPage();
+                if (lastPage) {
+                    $pageSelect.val(lastPage);
+                    this.gotoPage(lastPage);
+                }
             },
             initCatalog: function () {
                 var $select = generateCatalog(chapters);
                 var self = this;
                 $select.on("change", function () {
                     self.changeChapter($(this).val());
+                    self.gotoPage(0);
                 });
                 $catalog.html($select);
             },
             changeChapter: function (cid) {
-                var self = this;
                 this.chapter = cid;
-                this.page = 0;
                 var files = chapterMap[this.chapter]["files"];
                 this.totalPage = files.length;
                 $pageSelect.html(generatePageSelect(this.totalPage));
-                this.gotoPage(this.page);
+                CookieUtil.setCid(this.chapter);
             },
             bindEvent: function () {
                 var self = this;
@@ -175,6 +206,7 @@
             gotoPage: function (page) {
                 this.page = page * 1;
                 generateViewer(this.chapter, page);
+                CookieUtil.setPage(this.page);
             },
             printCatalog: function () {
                 console.log(chapters);
