@@ -5,14 +5,6 @@
     <title></title>
     <link href="//cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.css" rel="stylesheet">
     <style type="text/css">
-        .carousel-inner > .item {
-            position: relative;
-            -webkit-transition: 0.2s ease-in-out left;
-            -moz-transition: 0.2s ease-in-out left;
-            -o-transition: 0.2s ease-in-out left;
-            transition: 0.2s ease-in-out left;
-        }
-
         #catalog, #pageSelect {
             padding: 5px;
         }
@@ -52,6 +44,7 @@
         var $viewer = $("#viewer");
         var $catalog = $("#catalog");
         var $pageSelect = $("#pageSelect").find("select");
+        var usePreLoad = false;
 
         function loadData() {
             $.ajax({
@@ -80,14 +73,16 @@
         }
 
         function generateViewer(cid, page) {
-            var preLoadSrc = $viewer.find("#shadowImg").attr("src");
-            var src = preLoadSrc ? preLoadSrc : getImagePath(cid, page);
+            var src;
+            if (usePreLoad) {
+                var preLoadSrc = $viewer.find("#shadowImg").attr("src");
+                src = preLoadSrc ? preLoadSrc : getImagePath(cid, page);
+            } else {
+                src = getImagePath(cid, page);
+            }
             $viewer.find("#lightImg").attr("src", src);
             $viewer.find("#shadowImg").attr("src", getImagePath(cid, page + 1));
-        }
-
-        function clearPreLoadSrc() {
-            $viewer.find("#shadowImg").attr("src", "");
+            usePreLoad = false;
         }
 
         function getImagePath(cid, page) {
@@ -99,9 +94,7 @@
             } else if (page > files.length - 1) {
                 page = files.length - 1;
             }
-            var fileName = handleFileName(files[page]);
-            var fullPath = pathPrefix + fileName;
-            return fullPath;
+            return pathPrefix + handleFileName(files[page]);
         }
 
         function handleFileName(fileName) {
@@ -118,7 +111,7 @@
                 var chapter = chapters[i];
                 var chapterName = chapter.bname + "" + chapter.cname;
                 var selected = i == 0 ? ' selected="selected"' : '';
-                var option = $('<option value="' + chapter.cid + '"' + selected + '>' + chapterName + '</option>')
+                var option = $('<option value="' + chapter.cid + '"' + selected + '>' + chapterName + '</option>');
                 $(select).append(option);
             }
             return $(select);
@@ -160,7 +153,6 @@
                 loadData();
                 this.bindEvent();
                 this.initCatalog();
-                clearPreLoadSrc();
                 var targetCid;
                 if (CookieUtil.getCid()) {
                     targetCid = CookieUtil.getCid();
@@ -197,14 +189,13 @@
             bindEvent: function () {
                 var self = this;
                 $pageSelect.on("change", function() {
-                    clearPreLoadSrc();
                     self.gotoPage($(this).val());
                 });
                 $viewer.find(".previous").on("click", function () {
-                    clearPreLoadSrc();
                     self.pageByBtn(self.page - 1, "prev");
                 });
                 $viewer.find(".next").on("click", function () {
+                    usePreLoad = true;
                     self.pageByBtn(self.page + 1, "next");
                 });
             },
