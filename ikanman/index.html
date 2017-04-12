@@ -8,26 +8,31 @@
         #catalog, #pageSelect {
             padding: 5px;
         }
+
+        ul.pager {
+            margin: 5px 0;
+        }
     </style>
 </head>
 <body>
 <div class="container" id="container">
-    <div id="catalog">
-    </div>
+    <ul class="pager">
+        <li class="previous"><a href="#">上一页</a></li>
+        <li class="next"><a href="#">下一页</a></li>
+    </ul>
     <div id="viewer">
-        <div id="pageSelect">
-            <select class="form-control"></select>
-        </div>
-        <ul class="pager">
-            <li class="previous"><a href="#">上一页</a></li>
-            <li class="next"><a href="#">下一页</a></li>
-        </ul>
         <img id="lightImg" src="" class="img-responsive center-block"/>
         <img id="shadowImg" src="" class="img-responsive center-block hide"/>
-        <ul class="pager">
-            <li class="previous"><a href="#">上一页</a></li>
-            <li class="next"><a href="#">下一页</a></li>
-        </ul>
+    </div>
+    <ul class="pager">
+        <li class="previous"><a href="#">上一页</a></li>
+        <li class="next"><a href="#">下一页</a></li>
+    </ul>
+    <div id="pageSelect">
+        <select class="form-control"></select>
+    </div>
+    <div id="catalog">
+        <select class="form-control"></select>
     </div>
 </div>
 <!-- <script src="//cdn.bootcss.com/json2/20160511/json2.js"></script> -->
@@ -39,11 +44,14 @@
 <script type="text/javascript">
     (function () {
         var IMAGE_HOST = "http://p.yogajx.com";
-        var chapters;
-        var chapterMap = {};
+        var Book = {
+            chapters: [],
+            chapterIds: [],
+            chapterMap: {}
+        };
         var $viewer = $("#viewer");
-        var $catalog = $("#catalog");
         var $pageSelect = $("#pageSelect").find("select");
+        var $catalogSelect = $("#catalog").find("select");
         var usePreLoad = false;
 
         function loadData() {
@@ -52,10 +60,11 @@
                 type: "get",
                 dataType: "text",
                 success: function (data) {
-                    chapters = getChapters(data);
-                    for (var i = 0, len = chapters.length; i < len; i++) {
-                        var chapter = chapters[i];
-                        chapterMap[chapter.cid] = chapter;
+                    Book.chapters = getChapters(data);
+                    for (var i = 0, len = Book.chapters.length; i < len; i++) {
+                        var chapter = Book.chapters[i];
+                        Book.chapterMap[chapter.cid] = chapter;
+                        Book.chapterIds.push(chapter.cid);
                     }
                 },
                 async: false
@@ -86,7 +95,7 @@
         }
 
         function getImagePath(cid, page) {
-            var chapter = chapterMap[cid];
+            var chapter = Book.chapterMap[cid];
             var pathPrefix = IMAGE_HOST + chapter.path;
             var files = chapter["files"];
             if (page < 0) {
@@ -105,23 +114,24 @@
             return fileName;
         }
 
-        function generateCatalog(chapters) {
+        function generateCatalog() {
             var select = $('<select class="form-control"></select>');
-            for (var i = 0, len = chapters.length; i < len; i++) {
-                var chapter = chapters[i];
+            var opts = "";
+            for (var i = 0, len = Book.chapters.length; i < len; i++) {
+                var chapter = Book.chapters[i];
                 var chapterName = chapter.bname + "" + chapter.cname;
                 var selected = i == 0 ? ' selected="selected"' : '';
-                var option = $('<option value="' + chapter.cid + '"' + selected + '>' + chapterName + '</option>');
-                $(select).append(option);
+                opts += '<option value="' + chapter.cid + '"' + selected + '>' + chapterName + '</option>';
             }
-            return $(select);
+            return $(opts);
         }
 
         function generatePageSelect(totalPage) {
             var opts = "";
             for (var i = 0; i < totalPage; i++) {
                 var text = "第" + (i + 1) + "页";
-                opts += '<option value="' + i + '">' + text + '</option>';
+                var selected = i == 0 ? ' selected="selected"' : '';
+                opts += '<option value="' + i + '"' + selected + '>' + text + '</option>';
             }
             return $(opts);
         }
@@ -147,7 +157,7 @@
 
         window.IKanman = {
             page: 0,
-            chapter: 0,
+            cid: 0,
             totalPage: 0,
             init: function () {
                 loadData();
@@ -156,9 +166,9 @@
                 var targetCid;
                 if (CookieUtil.getCid()) {
                     targetCid = CookieUtil.getCid();
-                    $catalog.find("select").val(targetCid);
+                    $catalogSelect.val(targetCid);
                 } else {
-                    targetCid = $catalog.find("select").val();
+                    targetCid = $catalogSelect.val();
                 }
                 this.changeChapter(targetCid);
                 var lastPage;
@@ -171,54 +181,79 @@
                 this.gotoPage(lastPage);
             },
             initCatalog: function () {
-                var $select = generateCatalog(chapters);
-                var self = this;
-                $select.on("change", function () {
-                    self.changeChapter($(this).val());
-                    self.gotoPage(0);
-                });
-                $catalog.html($select);
+                $catalogSelect.html(generateCatalog());
             },
             changeChapter: function (cid) {
-                this.chapter = cid;
-                var files = chapterMap[this.chapter]["files"];
+                this.cid = cid * 1;
+                var files = Book.chapterMap[this.cid]["files"];
                 this.totalPage = files.length;
                 $pageSelect.html(generatePageSelect(this.totalPage));
-                CookieUtil.setCid(this.chapter);
+                CookieUtil.setCid(this.cid);
             },
             bindEvent: function () {
                 var self = this;
-                $pageSelect.on("change", function() {
+                $catalogSelect.on("change", function () {
+                    self.changeChapter($(this).val());
+                    self.gotoPage(0);
+                });
+                $pageSelect.on("change", function () {
                     self.gotoPage($(this).val());
                 });
-                $viewer.find(".previous").on("click", function () {
+                $("li.previous").on("click", function () {
                     self.pageByBtn(self.page - 1, "prev");
                 });
-                $viewer.find(".next").on("click", function () {
+                $("li.next").on("click", function () {
                     usePreLoad = true;
                     self.pageByBtn(self.page + 1, "next");
                 });
             },
             pageByBtn: function (page, direction) {
+                var isChangeChapter = false;
                 if (direction == "next") {
                     if (page >= this.totalPage - 1) {
+                        isChangeChapter = this.autoChangeChapter(direction);
                         page = this.totalPage - 1;
                     }
                 } else if (direction == "prev") {
-                    if (page - 1 < 0) {
+                    if (page < 0) {
+                        isChangeChapter = this.autoChangeChapter(direction);
                         page = 0;
                     }
                 }
-                $pageSelect.val(page);
-                this.gotoPage(page);
+                if (!isChangeChapter) {
+                    $pageSelect.val(page);
+                    this.gotoPage(page);
+                }
+            },
+            autoChangeChapter: function (direction) {
+                if (!direction) {
+                    return false;
+                }
+                var cidArr = Book.chapterIds;
+                var idx = cidArr.indexOf(this.cid);
+                if (direction == "next") {
+                    if (idx == cidArr.length - 1) {
+                        alert("已经看到最后一章");
+                        return false;
+                    }
+                    $catalogSelect.val(cidArr[idx + 1]);
+                } else if (direction == "prev") {
+                    if (idx == 0) {
+                        alert("已经看到第一章");
+                        return false;
+                    }
+                    $catalogSelect.val(cidArr[idx - 1]);
+                }
+                $catalogSelect.trigger("change");
+                return true;
             },
             gotoPage: function (page) {
                 this.page = page * 1;
-                generateViewer(this.chapter, this.page);
+                generateViewer(this.cid, this.page);
                 CookieUtil.setPage(this.page);
             },
             printCatalog: function () {
-                console.log(chapters);
+                console.log(Book.chapters);
             }
         };
     })();
