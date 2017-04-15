@@ -156,26 +156,28 @@
                 self.gotoPage($(this).val());
             });
             $("li.previous").on("click", function () {
-                self.pageByBtn(self.page - 1, "prev");
+                self.pageByBtn("prev");
             });
             $("li.next, #lightImg").on("click", function () {
-                self.pageByBtn(self.page + 1, "next");
+                self.pageByBtn("next");
             });
         },
-        pageByBtn: function (page, direction) {
+        pageByBtn: function (direction) {
             var isChangeChapter = false;
+            var page = this.page;
             if (direction == "next") {
                 if (page >= this.totalPage - 1) {
                     usePreLoad = false;
                     isChangeChapter = this.autoChangeChapter(direction);
-                    page = this.totalPage - 1;
                 } else {
+                    page = page + 1;
                     usePreLoad = true;
                 }
             } else if (direction == "prev") {
-                if (page < 0) {
+                if (page <= 0) {
                     isChangeChapter = this.autoChangeChapter(direction);
-                    page = 0;
+                } else {
+                    page = page - 1;
                 }
             }
             if (!isChangeChapter) {
