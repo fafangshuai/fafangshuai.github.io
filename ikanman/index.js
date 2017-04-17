@@ -111,14 +111,35 @@
         }
     };
 
+    function initCatalog() {
+        $catalogSelect.html(generateCatalog());
+    }
+
+    function bindEvent() {
+        var self = this;
+        $catalogSelect.on("change", function () {
+            self.changeChapter($(this).val());
+            self.gotoPage(0);
+        });
+        $pageSelect.on("change", function () {
+            self.gotoPage($(this).val());
+        });
+        $("li.previous").on("click", function () {
+            self.pageByBtn("prev");
+        });
+        $("li.next, #lightImg").on("click", function () {
+            self.pageByBtn("next");
+        });
+    }
+
     window.IKanman = {
         page: 0,
         cid: 0,
         totalPage: 0,
         init: function () {
             loadData();
-            this.bindEvent();
-            this.initCatalog();
+            bindEvent.bind(this)();
+            initCatalog();
             var targetCid;
             if (CookieUtil.getCid()) {
                 targetCid = CookieUtil.getCid();
@@ -136,31 +157,13 @@
             $pageSelect.val(lastPage);
             this.gotoPage(lastPage);
         },
-        initCatalog: function () {
-            $catalogSelect.html(generateCatalog());
-        },
+
         changeChapter: function (cid) {
             this.cid = cid * 1;
             var files = Book.chapterMap[this.cid]["files"];
             this.totalPage = files.length;
             $pageSelect.html(generatePageSelect(this.totalPage));
             CookieUtil.setCid(this.cid);
-        },
-        bindEvent: function () {
-            var self = this;
-            $catalogSelect.on("change", function () {
-                self.changeChapter($(this).val());
-                self.gotoPage(0);
-            });
-            $pageSelect.on("change", function () {
-                self.gotoPage($(this).val());
-            });
-            $("li.previous").on("click", function () {
-                self.pageByBtn("prev");
-            });
-            $("li.next, #lightImg").on("click", function () {
-                self.pageByBtn("next");
-            });
         },
         pageByBtn: function (direction) {
             var isChangeChapter = false;
