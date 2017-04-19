@@ -6,8 +6,8 @@
         chapterMap: {}
     };
     var $viewer = $("#viewer");
-    var $pageSelect = $("#pageSelect").find("select");
-    var $catalogSelect = $("#catalog").find("select");
+    var $pageSelect = $("#pageNav").find("select");
+    var $catalogSelect = $("#catalogNav").find("select");
     var usePreLoad = false;
 
     function loadData() {
@@ -34,6 +34,9 @@
             var chapter = JSON.parse(chapterJsonArr[i]);
             chapters.push(chapter);
         }
+        chapters.sort(function (left, right) {
+            return left.cid - right.cid;
+        });
         return chapters;
     }
 
@@ -70,12 +73,11 @@
         return fileName;
     }
 
-    function generateCatalog() {
-        var select = $('<select class="form-control"></select>');
+    function generateCatalogSelect() {
         var opts = "";
         for (var i = 0, len = Book.chapters.length; i < len; i++) {
             var chapter = Book.chapters[i];
-            var chapterName = chapter.bname + "" + chapter.cname;
+            var chapterName = chapter.bname + " " + chapter.cname;
             var selected = i == 0 ? ' selected="selected"' : '';
             opts += '<option value="' + chapter.cid + '"' + selected + '>' + chapterName + '</option>';
         }
@@ -112,7 +114,7 @@
     };
 
     function initCatalog() {
-        $catalogSelect.html(generateCatalog());
+        $catalogSelect.html(generateCatalogSelect());
     }
 
     function bindEvent() {
