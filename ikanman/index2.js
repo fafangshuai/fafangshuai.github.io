@@ -156,7 +156,14 @@ var ComicReader = (function () {
         },
         triggerPageChange: function () {
             $pageSelect.val(Current.page);
-            var src = Current.chapter.getPageUrl(Current.page);
+            var src;
+            if (Current.usePreLoad) {
+                var preLoadSrc = $viewer.find("#shadowImg").attr("src");
+                src = preLoadSrc ? preLoadSrc : Current.chapter.getPageUrl(Current.page);
+            } else {
+                src = Current.chapter.getPageUrl(Current.page);
+                Current.usePreLoad = true;
+            }
             var nextSrc = Current.chapter.getPageUrl(Current.page + 1);
             this.generateViewer(src, nextSrc);
         },
@@ -186,6 +193,7 @@ var ComicReader = (function () {
         page: 0,
         chapter: null,
         book: null,
+        usePreLoad: true,
         setPage: function (page) {
             page = page * 1;
             if (page < 0) {
@@ -200,6 +208,7 @@ var ComicReader = (function () {
         },
         setChapter: function (chapter) {
             this.chapter = chapter;
+            this.usePreLoad = false;
             CookieUtil.setCidAndPage(this.chapter.id, this.page);
             View.triggerChapterChange();
         },
@@ -222,6 +231,7 @@ var ComicReader = (function () {
             if (Current.page <= 0) {
                 this.autoChangeChapter("prev");
             } else {
+                Current.usePreLoad = false;
                 Current.setPage(Current.page - 1);
             }
         },
@@ -265,10 +275,11 @@ var ComicReader = (function () {
                 Current.setBook(Cache.bookMap[$(this).val()]);
             });
             $catalogSelect.on("change", function () {
-                Current.setChapter(Current.book.getChapter($(this).val()))
+                Current.setChapter(Current.book.getChapter($(this).val()));
                 Current.setPage(0);
             });
             $pageSelect.on("change", function () {
+                Current.usePreLoad = false;
                 Current.setPage($(this).val());
             });
             $("li.previous").on("click", function () {
@@ -313,6 +324,7 @@ var ComicReader = (function () {
             console.log(Current.book.getChapters());
         };
     }
+
     return new ComicReader();
 })();
 $(function () {
