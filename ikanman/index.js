@@ -19,8 +19,8 @@ var ComicReader = (function () {
         return {
             config: function (opts) {
                 if (opts) {
-                    imageHost = opts[imageHost] || imageHost;
-                    inputPath = opts[inputPath] || inputPath;
+                    imageHost = opts["imageHost"] || imageHost;
+                    inputPath = opts["inputPath"] || inputPath;
                 }
             },
             getChapters: function () {
@@ -191,7 +191,7 @@ var ComicReader = (function () {
             if (cid) {
                 Current.setChapter(Cache.chapterMap[cid]);
             } else {
-                Current.setChapter(chapters[0]);
+                Current.setChapter(Cache.chapters[0]);
             }
             var page = CookieUtil.getPage();
             if (page) {

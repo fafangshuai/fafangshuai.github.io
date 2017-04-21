@@ -19,7 +19,7 @@ var ComicReader = (function () {
         return {
             config: function (opts) {
                 if (opts) {
-                    imageHost = opts[imageHost] || imageHost;
+                    imageHost = opts["imageHost"] || imageHost;
                 }
             },
             getBooks: function () {
