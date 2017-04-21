@@ -156,8 +156,8 @@ var ComicReader = (function () {
                 $viewer.find("img:hidden").show();
                 visible.hide();
             } else {
-                $viewer.find("#lightImg").attr("src", src);
-                $viewer.find("#shadowImg").attr("src", nextSrc);
+                $viewer.find("img:visible").attr("src", src);
+                $viewer.find("img:hidden").attr("src", nextSrc);
             }
         },
         triggerPageChange: function () {
@@ -286,7 +286,7 @@ var ComicReader = (function () {
             $("li.previous").on("click", function () {
                 self.prevPage();
             });
-            $("li.next, #lightImg").on("click", function () {
+            $("li.next, #viewer>img").on("click", function () {
                 self.nextPage();
             });
         }
