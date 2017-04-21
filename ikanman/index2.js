@@ -162,7 +162,6 @@ var ComicReader = (function () {
                 src = preLoadSrc ? preLoadSrc : Current.chapter.getPageUrl(Current.page);
             } else {
                 src = Current.chapter.getPageUrl(Current.page);
-                Current.usePreLoad = true;
             }
             var nextSrc = Current.chapter.getPageUrl(Current.page + 1);
             this.generateViewer(src, nextSrc);
@@ -202,13 +201,13 @@ var ComicReader = (function () {
             if (page >= this.chapter.totalPage) {
                 page = this.chapter.totalPage - 1;
             }
+            this.usePreLoad = this.page + 1 == page;
             this.page = page;
             CookieUtil.setCidAndPage(this.chapter.id, this.page);
             View.triggerPageChange();
         },
         setChapter: function (chapter) {
             this.chapter = chapter;
-            this.usePreLoad = false;
             CookieUtil.setCidAndPage(this.chapter.id, this.page);
             View.triggerChapterChange();
         },
@@ -231,7 +230,6 @@ var ComicReader = (function () {
             if (Current.page <= 0) {
                 this.autoChangeChapter("prev");
             } else {
-                Current.usePreLoad = false;
                 Current.setPage(Current.page - 1);
             }
         },
@@ -279,7 +277,6 @@ var ComicReader = (function () {
                 Current.setPage(0);
             });
             $pageSelect.on("change", function () {
-                Current.usePreLoad = false;
                 Current.setPage($(this).val());
             });
             $("li.previous").on("click", function () {
