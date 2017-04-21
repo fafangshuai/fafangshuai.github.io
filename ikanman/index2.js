@@ -1,10 +1,10 @@
 var ComicReader = (function () {
     var DataService = (function () {
-        var IMAGE_HOST = "http://p.yogajx.com";
+        var imageHost = "http://p.yogajx.com";
         var configPath = "config.json";
 
         function getImagePath(path, file) {
-            var pathPrefix = IMAGE_HOST + path;
+            var pathPrefix = imageHost + path;
             return pathPrefix + handleFileName(file);
         }
 
@@ -17,6 +17,11 @@ var ComicReader = (function () {
         }
 
         return {
+            config: function (opts) {
+                if (opts) {
+                    imageHost = opts[imageHost] || imageHost;
+                }
+            },
             getBooks: function () {
                 var books = [];
                 $.ajax({
@@ -296,7 +301,8 @@ var ComicReader = (function () {
     };
 
     function ComicReader() {
-        this.init = function () {
+        this.init = function (opts) {
+            DataService.config(opts);
             Ctrl.loadBooks();
             Ctrl.bindEvent();
         };
