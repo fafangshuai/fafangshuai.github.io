@@ -5,8 +5,13 @@
 		"path": "juren.json"
 	},
 	{
-		"id": "",
-		"name": "东京食尸鬼",
-		"path": "chihuo.json"
+		"id": "5141",
+		"name": "野良神",
+		"path": "norakami.json"
+	},
+	{
+		"id": "4841",
+		"name": "王者天下",
+		"path": "wangzhe.json"
 	}
 ]
