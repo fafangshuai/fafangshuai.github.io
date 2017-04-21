@@ -41,15 +41,8 @@
     }
 
     function generateViewer(cid, page) {
-        var src;
-        if (usePreLoad) {
-            var preLoadSrc = $viewer.find("#shadowImg").attr("src");
-            src = preLoadSrc ? preLoadSrc : getImagePath(cid, page);
-        } else {
-            src = getImagePath(cid, page);
-        }
-        $viewer.find("#lightImg").attr("src", src);
-        $viewer.find("#shadowImg").attr("src", getImagePath(cid, page + 1));
+        $viewer.find("#lightImg").attr("src", getImagePath(cid, page));
+        // $viewer.find("#shadowImg").attr("src", getImagePath(cid, page + 1));
         usePreLoad = false;
     }
 

@@ -150,21 +150,21 @@ var ComicReader = (function () {
             }
             $bookSelect.html($(opts));
         },
-        generateViewer: function (src, nextSrc) {
-            $viewer.find("#lightImg").attr("src", src);
-            $viewer.find("#shadowImg").attr("src", nextSrc);
+        generateViewer: function (src, nextSrc, usePreLoad) {
+            if (usePreLoad) {
+                var visible = $viewer.find("img:visible").attr("src", nextSrc);
+                $viewer.find("img:hidden").show();
+                visible.hide();
+            } else {
+                $viewer.find("#lightImg").attr("src", src);
+                $viewer.find("#shadowImg").attr("src", nextSrc);
+            }
         },
         triggerPageChange: function () {
             $pageSelect.val(Current.page);
-            var src;
-            if (Current.usePreLoad) {
-                var preLoadSrc = $viewer.find("#shadowImg").attr("src");
-                src = preLoadSrc ? preLoadSrc : Current.chapter.getPageUrl(Current.page);
-            } else {
-                src = Current.chapter.getPageUrl(Current.page);
-            }
+            var src = Current.chapter.getPageUrl(Current.page);
             var nextSrc = Current.chapter.getPageUrl(Current.page + 1);
-            this.generateViewer(src, nextSrc);
+            this.generateViewer(src, nextSrc, Current.usePreLoad);
         },
         triggerChapterChange: function () {
             $catalogSelect.val(Current.chapter.id);
@@ -201,7 +201,11 @@ var ComicReader = (function () {
             if (page >= this.chapter.totalPage) {
                 page = this.chapter.totalPage - 1;
             }
-            this.usePreLoad = this.page + 1 == page;
+            if (this.page == 0) {
+                this.usePreLoad = false;
+            } else {
+                this.usePreLoad = this.page + 1 == page;
+            }
             this.page = page;
             CookieUtil.setCidAndPage(this.chapter.id, this.page);
             View.triggerPageChange();
@@ -320,10 +324,8 @@ var ComicReader = (function () {
         this.printChapters = function () {
             console.log(Current.book.getChapters());
         };
+        this.init();
     }
 
     return new ComicReader();
 })();
-$(function () {
-    window.ComicReader.init();
-});
