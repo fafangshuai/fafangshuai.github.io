@@ -1,91 +1,222 @@
-(function () {
-    var IMAGE_HOST = "http://p.yogajx.com";
-    var Book = {
-        chapters: [],
-        chapterIds: [],
-        chapterMap: {}
-    };
+var ComicReader = (function () {
+    var DataService = (function () {
+        var imageHost = "http://p.yogajx.com";
+        var inputPath = "input.json";
+
+        function getImagePath(path, file) {
+            var pathPrefix = imageHost + path;
+            return pathPrefix + handleFileName(file);
+        }
+
+        function handleFileName(fileName) {
+            var idx = fileName.lastIndexOf(".webp");
+            if (idx > 0) {
+                fileName = fileName.substring(0, fileName.lastIndexOf(".webp"));
+            }
+            return fileName;
+        }
+
+        return {
+            config: function (opts) {
+                if (opts) {
+                    imageHost = opts["imageHost"] || imageHost;
+                    inputPath = opts["inputPath"] || inputPath;
+                }
+            },
+            getChapters: function () {
+                var chapters = [];
+                $.ajax({
+                    url: inputPath,
+                    type: "get",
+                    dataType: "text",
+                    success: function (data) {
+                        var chapterJsonArr = data.split("\n");
+                        $.each(chapterJsonArr, function () {
+                            var chapter = JSON.parse(this);
+                            var files = [];
+                            $.each(chapter.files, function () {
+                                files.push(getImagePath(chapter.path, this));
+                            });
+                            chapters.push(new Chapter(chapter.cid, chapter.bname + " " + chapter.cname, files));
+                            chapters.sort(function (left, right) {
+                                return left.id - right.id;
+                            });
+                        });
+                    },
+                    async: false
+                });
+                return chapters;
+            }
+        }
+    })();
+
+    function Chapter(id, name, files) {
+        this.id = id;
+        this.name = name;
+        this.files = files;
+        this.totalPage = this.files.length;
+        this.getPageUrl = function (page) {
+            if (page < 0) {
+                page = 0;
+            }
+            if (page > this.totalPage - 1) {
+                page = this.totalPage - 1;
+            }
+            return this.files[page];
+        }
+    }
+
     var $viewer = $("#viewer");
     var $pageSelect = $("#pageNav").find("select");
     var $catalogSelect = $("#catalogNav").find("select");
-    var usePreLoad = false;
 
-    function loadData() {
-        $.ajax({
-            url: "input.json",
-            type: "get",
-            dataType: "text",
-            success: function (data) {
-                Book.chapters = getChapters(data);
-                for (var i = 0, len = Book.chapters.length; i < len; i++) {
-                    var chapter = Book.chapters[i];
-                    Book.chapterMap[chapter.cid] = chapter;
-                    Book.chapterIds.push(chapter.cid);
+    var Cache = {
+        chapterMap: {},
+        chapters: {}
+    };
+
+    var View = {
+        generatePageSelect: function (totalPage) {
+            var opts = "";
+            for (var i = 0; i < totalPage; i++) {
+                var text = "第" + (i + 1) + "页";
+                var selected = i == 0 ? ' selected="selected"' : '';
+                opts += '<option value="' + i + '"' + selected + '>' + text + '</option>';
+            }
+            $pageSelect.html($(opts));
+        },
+        generateCatalogSelect: function (chapters) {
+            var opts = "";
+            for (var i = 0, len = chapters.length; i < len; i++) {
+                var chapter = chapters[i];
+                var selected = i == 0 ? ' selected="selected"' : '';
+                opts += '<option value="' + chapter.id + '"' + selected + '>' + chapter.name + '</option>';
+            }
+            $catalogSelect.html($(opts));
+        },
+        generateViewer: function (src, nextSrc, usePreLoad) {
+            if (usePreLoad) {
+                var visible = $viewer.find("img:visible").attr("src", nextSrc);
+                $viewer.find("img:hidden").show();
+                visible.hide();
+            } else {
+                $viewer.find("img:visible").attr("src", src);
+                $viewer.find("img:hidden").attr("src", nextSrc);
+            }
+        },
+        triggerPageChange: function () {
+            $pageSelect.val(Current.page);
+            var src = Current.chapter.getPageUrl(Current.page);
+            var nextSrc = Current.chapter.getPageUrl(Current.page + 1);
+            this.generateViewer(src, nextSrc, Current.usePreLoad);
+        },
+        triggerChapterChange: function () {
+            $catalogSelect.val(Current.chapter.id);
+            this.generatePageSelect(Current.chapter.totalPage);
+        }
+    };
+
+    var Current = {
+        page: 0,
+        chapter: null,
+        usePreLoad: true,
+        setPage: function (page) {
+            page = page * 1;
+            if (page < 0) {
+                page = 0;
+            }
+            if (page >= this.chapter.totalPage) {
+                page = this.chapter.totalPage - 1;
+            }
+            if (this.page == 0) {
+                this.usePreLoad = false;
+            } else {
+                this.usePreLoad = this.page + 1 == page;
+            }
+            this.page = page;
+            CookieUtil.setPage(this.page);
+            View.triggerPageChange();
+        },
+        setChapter: function (chapter) {
+            this.chapter = chapter;
+            CookieUtil.setCid(this.chapter.id);
+            View.triggerChapterChange();
+        }
+    };
+
+    var Ctrl = {
+        nextPage: function () {
+            if (Current.page >= Current.chapter.totalPage - 1) {
+                this.autoChangeChapter("next");
+            } else {
+                Current.setPage(Current.page + 1);
+            }
+        },
+        prevPage: function () {
+            if (Current.page <= 0) {
+                this.autoChangeChapter("prev");
+            } else {
+                Current.setPage(Current.page - 1);
+            }
+        },
+        autoChangeChapter: function (direction) {
+            if (!direction) {
+                return;
+            }
+            var chapterArr = Cache.chapters;
+            var idx = chapterArr.indexOf(Current.chapter);
+            if (direction == "next") {
+                if (idx == chapterArr.length - 1) {
+                    alert("已经看到最后一章");
+                    return;
                 }
-            },
-            async: false
-        });
-    }
-
-    function getChapters(data) {
-        var chapters = [];
-        var chapterJsonArr = data.split("\n");
-        for (var i = 0, len = chapterJsonArr.length; i < len; i++) {
-            var chapter = JSON.parse(chapterJsonArr[i]);
-            chapters.push(chapter);
+                Current.setChapter(chapterArr[idx + 1]);
+                Current.setPage(0);
+            } else if (direction == "prev") {
+                if (idx == 0) {
+                    alert("已经看到第一章");
+                    return;
+                }
+                Current.setChapter(chapterArr[idx - 1]);
+                Current.setPage(0);
+            }
+        },
+        loadChapters: function () {
+            Cache.chapters = DataService.getChapters();
+            View.generateCatalogSelect(Cache.chapters);
+            $.each(Cache.chapters, function () {
+                Cache.chapterMap[this.id] = this;
+            });
+            var cid = CookieUtil.getCid();
+            if (cid) {
+                Current.setChapter(Cache.chapterMap[cid]);
+            } else {
+                Current.setChapter(Cache.chapters[0]);
+            }
+            var page = CookieUtil.getPage();
+            if (page) {
+                Current.setPage(page);
+            } else {
+                Current.setPage(0);
+            }
+        },
+        bindEvent: function () {
+            var self = this;
+            $catalogSelect.on("change", function () {
+                Current.setChapter(Cache.chapterMap[$(this).val()]);
+                Current.setPage(0);
+            });
+            $pageSelect.on("change", function () {
+                Current.setPage($(this).val());
+            });
+            $("li.previous").on("click", function () {
+                self.prevPage();
+            });
+            $("li.next, #viewer>img").on("click", function () {
+                self.nextPage();
+            });
         }
-        chapters.sort(function (left, right) {
-            return left.cid - right.cid;
-        });
-        return chapters;
-    }
-
-    function generateViewer(cid, page) {
-        $viewer.find("#lightImg").attr("src", getImagePath(cid, page));
-        // $viewer.find("#shadowImg").attr("src", getImagePath(cid, page + 1));
-        usePreLoad = false;
-    }
-
-    function getImagePath(cid, page) {
-        var chapter = Book.chapterMap[cid];
-        var pathPrefix = IMAGE_HOST + chapter.path;
-        var files = chapter["files"];
-        if (page < 0) {
-            page = 0;
-        } else if (page > files.length - 1) {
-            page = files.length - 1;
-        }
-        return pathPrefix + handleFileName(files[page]);
-    }
-
-    function handleFileName(fileName) {
-        var idx = fileName.lastIndexOf(".webp");
-        if (idx > 0) {
-            fileName = fileName.substring(0, fileName.lastIndexOf(".webp"));
-        }
-        return fileName;
-    }
-
-    function generateCatalogSelect() {
-        var opts = "";
-        for (var i = 0, len = Book.chapters.length; i < len; i++) {
-            var chapter = Book.chapters[i];
-            var chapterName = chapter.bname + " " + chapter.cname;
-            var selected = i == 0 ? ' selected="selected"' : '';
-            opts += '<option value="' + chapter.cid + '"' + selected + '>' + chapterName + '</option>';
-        }
-        return $(opts);
-    }
-
-    function generatePageSelect(totalPage) {
-        var opts = "";
-        for (var i = 0; i < totalPage; i++) {
-            var text = "第" + (i + 1) + "页";
-            var selected = i == 0 ? ' selected="selected"' : '';
-            opts += '<option value="' + i + '"' + selected + '>' + text + '</option>';
-        }
-        return $(opts);
-    }
+    };
 
     var CookieUtil = {
         options: {expires: 365, path: "/"},
@@ -106,115 +237,17 @@
         }
     };
 
-    function initCatalog() {
-        $catalogSelect.html(generateCatalogSelect());
+    function ComicReader() {
+        this.init = function (opts) {
+            DataService.config(opts);
+            Ctrl.loadChapters();
+            Ctrl.bindEvent();
+        };
+        this.printChapters = function () {
+            console.log(Cache.chapters);
+        };
+        this.init();
     }
 
-    function bindEvent() {
-        var self = this;
-        $catalogSelect.on("change", function () {
-            self.changeChapter($(this).val());
-            self.gotoPage(0);
-        });
-        $pageSelect.on("change", function () {
-            self.gotoPage($(this).val());
-        });
-        $("li.previous").on("click", function () {
-            self.pageByBtn("prev");
-        });
-        $("li.next, #lightImg").on("click", function () {
-            self.pageByBtn("next");
-        });
-    }
-
-    window.IKanman = {
-        page: 0,
-        cid: 0,
-        totalPage: 0,
-        init: function () {
-            loadData();
-            bindEvent.bind(this)();
-            initCatalog();
-            var targetCid;
-            if (CookieUtil.getCid()) {
-                targetCid = CookieUtil.getCid();
-                $catalogSelect.val(targetCid);
-            } else {
-                targetCid = $catalogSelect.val();
-            }
-            this.changeChapter(targetCid);
-            var lastPage;
-            if (CookieUtil.getPage()) {
-                lastPage = CookieUtil.getPage();
-            } else {
-                lastPage = 0;
-            }
-            $pageSelect.val(lastPage);
-            this.gotoPage(lastPage);
-        },
-
-        changeChapter: function (cid) {
-            this.cid = cid * 1;
-            var files = Book.chapterMap[this.cid]["files"];
-            this.totalPage = files.length;
-            $pageSelect.html(generatePageSelect(this.totalPage));
-            CookieUtil.setCid(this.cid);
-        },
-        pageByBtn: function (direction) {
-            var isChangeChapter = false;
-            var page = this.page;
-            if (direction == "next") {
-                if (page >= this.totalPage - 1) {
-                    usePreLoad = false;
-                    isChangeChapter = this.autoChangeChapter(direction);
-                } else {
-                    page = page + 1;
-                    usePreLoad = true;
-                }
-            } else if (direction == "prev") {
-                if (page <= 0) {
-                    isChangeChapter = this.autoChangeChapter(direction);
-                } else {
-                    page = page - 1;
-                }
-            }
-            if (!isChangeChapter) {
-                $pageSelect.val(page);
-                this.gotoPage(page);
-            }
-        },
-        autoChangeChapter: function (direction) {
-            if (!direction) {
-                return false;
-            }
-            var cidArr = Book.chapterIds;
-            var idx = cidArr.indexOf(this.cid);
-            if (direction == "next") {
-                if (idx == cidArr.length - 1) {
-                    alert("已经看到最后一章");
-                    return false;
-                }
-                $catalogSelect.val(cidArr[idx + 1]);
-            } else if (direction == "prev") {
-                if (idx == 0) {
-                    alert("已经看到第一章");
-                    return false;
-                }
-                $catalogSelect.val(cidArr[idx - 1]);
-            }
-            $catalogSelect.trigger("change");
-            return true;
-        },
-        gotoPage: function (page) {
-            this.page = page * 1;
-            generateViewer(this.cid, this.page);
-            CookieUtil.setPage(this.page);
-        },
-        printCatalog: function () {
-            console.log(Book.chapters);
-        }
-    };
+    return new ComicReader();
 })();
-$(function () {
-    window.IKanman.init();
-});
