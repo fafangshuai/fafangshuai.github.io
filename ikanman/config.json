@@ -2,26 +2,26 @@
 	{
 		"id": "4740",
 		"name": "进击的巨人",
-		"path": "juren.json"
+		"path": "comics/juren.json"
 	},
 	{
 		"id": "5141",
 		"name": "野良神",
-		"path": "norakami.json"
+		"path": "comics/norakami.json"
 	},
 	{
 		"id": "4841",
 		"name": "王者天下",
-		"path": "wangzhe.json"
+		"path": "comics/wangzhe.json"
 	},
 	{
 		"id": "4374",
 		"name": "斩！赤红之瞳",
-		"path": "akane.json"
+		"path": "comics/akane.json"
 	},
 	{
 		"id": "4739",
 		"name": "妄想学生会",
-		"path": "wangxiang.json"
+		"path": "comics/wangxiang.json"
 	}
 ]
