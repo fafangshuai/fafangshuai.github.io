@@ -55,9 +55,9 @@ var ComicReader = (function () {
                                 files.push(getImagePath(chapter.path, this));
                             });
                             chapters.push(new Chapter(chapter.cid, chapter.bname + " " + chapter.cname, files));
-                            chapters.sort(function (left, right) {
-                                return left.id - right.id;
-                            });
+                        });
+                        chapters.sort(function (left, right) {
+                            return left.id - right.id;
                         });
                     },
                     async: false
@@ -289,6 +289,13 @@ var ComicReader = (function () {
             $("li.next, #viewer>img").on("click", function () {
                 self.nextPage();
             });
+            /*$("#viewer>img").on("click", function (e) {
+                if (e.offsetX > $(this).width() / 2) {
+                    self.nextPage();
+                } else {
+                    self.prevPage();
+                }
+            });*/
         }
     };
 
