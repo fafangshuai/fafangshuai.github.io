@@ -324,6 +324,17 @@ var ComicReader = (function () {
         this.printChapters = function () {
             console.log(Current.book.getChapters());
         };
+        this.changBookByName = function (bname) {
+            var books = Object.values(Cache.bookMap);
+            var book;
+            for (var i = 0, len = books.length; i < len; i++) {
+                if (books[i].name == bname) {
+                    book = books[i];
+                    break;
+                }
+            }
+            Current.setBook(book);
+        };
         this.init();
     }
 
